@@ -6,8 +6,8 @@ Cerberus is a CPU thermal watchdog for **TrueNAS SCALE** (AMD Opteron X3000-seri
 
 ### Scripts
 
-| Script | Status | Config file |
-|---|---|---|
+| Script                | Status  | Config file            |
+| --------------------- | ------- | ---------------------- |
 | `Scripts/cerberus.sh` | Current | `Scripts/cerberus.env` |
 
 `cerberus.sh` is the active script. When making changes, apply them here.
@@ -41,6 +41,7 @@ Any    → [TEMP ≥ SHUTDOWN_THRESHOLD] → Emergency: midclt system.shutdown, 
 ### Container-to-app matching (in `sum_app_cpu` / `app_has_override`)
 
 Matching is performed in priority order:
+
 1. `com.docker.compose.project == app` (custom apps)
 2. `com.docker.compose.project == "ix-<app>"` (TrueNAS catalog apps)
 3. Container name exactly equals app name

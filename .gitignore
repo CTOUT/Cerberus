@@ -1,0 +1,25 @@
+# Cerberus user configuration — template (EXAMPLE-cerberus.env) is tracked
+*.env
+!Scripts/EXAMPLE-cerberus.env
+
+# Legacy / archived scripts — not distributed
+Scripts/archive/
+
+# VS Code local settings
+.vscode/*
+!.vscode/extensions.json
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node (tooling)
+node_modules/
+npm-debug.log*
+*.log
+
+# Temp / scratch files
+*.tmp
+*.bak
+*.swp

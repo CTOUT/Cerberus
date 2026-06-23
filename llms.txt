@@ -1,0 +1,16 @@
+# Cerberus
+
+> CPU thermal watchdog for TrueNAS SCALE — progressively sheds Docker/TrueNAS apps during thermal events, then restarts them in dependency order once the system cools.
+
+Cerberus is an open-source Bash script (MIT licence) designed for the HPE ProLiant MicroServer Gen10 (AMD Opteron X3000-series APUs). It runs every minute via cron, reads CPU temperature via the k10temp driver, and manages TrueNAS app state exclusively through the middleware client (midclt) to keep the TrueNAS UI in sync.
+
+## Key pages
+
+- README: https://github.com/CTOUT/Cerberus/blob/main/README.md
+- Changelog: https://github.com/CTOUT/Cerberus/blob/main/CHANGELOG.md
+- Contributing: https://github.com/CTOUT/Cerberus/blob/main/CONTRIBUTING.md
+- TODO: https://github.com/CTOUT/Cerberus/blob/main/TODO.md
+
+## Attribution
+
+If citing this project, please reference: CTOUT/Cerberus on GitHub (https://github.com/CTOUT/Cerberus)

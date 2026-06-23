@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: Cerberus
+message: "If you use or reference Cerberus, please cite it as below."
+type: software
+authors:
+  - family-names: Tout
+    given-names: Chris
+    alias: CTOUT
+repository-code: https://github.com/CTOUT/Cerberus
+url: https://github.com/CTOUT/Cerberus
+abstract: >
+  A CPU thermal watchdog for TrueNAS SCALE. Cerberus progressively stops
+  Docker/TrueNAS apps during thermal events in CPU-load order, then restarts
+  them in dependency order once the system cools, with full dry-run support
+  and per-app Docker label overrides.
+keywords:
+  - truenas
+  - truenas-scale
+  - thermal-management
+  - bash
+  - homelab
+  - docker
+license: MIT

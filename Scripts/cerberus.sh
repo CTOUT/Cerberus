@@ -39,7 +39,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source user configuration if present.  All built-in defaults below apply for
 # any setting not defined in the env file, so the script runs as-is without one.
 ENV_FILE="${SCRIPT_DIR}/cerberus.env"
-# shellcheck disable=SC1091
+# shellcheck disable=SC1090,SC1091
 [[ -f "$ENV_FILE" ]] && source "$ENV_FILE"
 
 # ── Scalars: env value wins; built-in default applies if not set ─────────────

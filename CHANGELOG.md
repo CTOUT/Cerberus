@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+---
+
+## [v1.0.0] — 2026-06-23
+
+### Added
+- Standardized repository configurations (.editorconfig, Prettier)
+- Automated CSpell dictionaries and validation workflows
+- Automated GitHub Release workflows
+
 ### Added
 
 - Prometheus textfile-collector output (`write_metrics()`) — exposes `cerberus_cpu_temp_celsius`, `cerberus_thermal_event_active`, `cerberus_apps_stopped_total`, `cerberus_last_breach_temp_celsius`, and per-app `cerberus_app_stopped` gauge metrics each cron cycle

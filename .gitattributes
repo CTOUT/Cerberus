@@ -1,5 +1,11 @@
-# Ensure consistent line endings
-* text=auto
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
 
-# Shell scripts always LF
-*.sh text eol=lf
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.tar.gz binary

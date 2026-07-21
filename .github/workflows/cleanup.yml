@@ -1,0 +1,98 @@
+name: Cleanup old workflow runs, artifacts, and caches
+
+permissions:
+  actions: write
+  contents: read
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # daily at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set cutoff dates
+        id: cutoff
+        run: |
+          echo "cutoff_success=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_failure=$(date -u -d '3 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_cancelled=$(date -u -d '1 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_timedout=$(date -u -d '1 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_artifacts=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_caches=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+      - name: Delete workflow runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CUTOFF_SUCCESS: ${{ steps.cutoff.outputs.cutoff_success }}
+          CUTOFF_FAILURE: ${{ steps.cutoff.outputs.cutoff_failure }}
+          CUTOFF_CANCELLED: ${{ steps.cutoff.outputs.cutoff_cancelled }}
+          CUTOFF_TIMEDOUT: ${{ steps.cutoff.outputs.cutoff_timedout }}
+        run: |
+          runs=$(gh api repos/$REPO/actions/runs --paginate -q '.workflow_runs[] | {id: .id, created: .created_at, conclusion: .conclusion}')
+
+          echo "$runs" | while read -r run; do
+            id=$(echo "$run" | jq -r '.id')
+            created=$(echo "$run" | jq -r '.created')
+            conclusion=$(echo "$run" | jq -r '.conclusion')
+
+            if [[ "$conclusion" == "failure" && "$created" < "$CUTOFF_FAILURE" ]]; then
+              echo "Deleting FAILED run $id from $created"
+              gh api repos/$REPO/actions/runs/$id -X DELETE
+            fi
+
+            if [[ "$conclusion" == "cancelled" && "$created" < "$CUTOFF_CANCELLED" ]]; then
+              echo "Deleting CANCELLED run $id from $created"
+              gh api repos/$REPO/actions/runs/$id -X DELETE
+            fi
+
+            if [[ "$conclusion" == "timed_out" && "$created" < "$CUTOFF_TIMEDOUT" ]]; then
+              echo "Deleting TIMED_OUT run $id from $created"
+              gh api repos/$REPO/actions/runs/$id -X DELETE
+            fi
+
+            if [[ "$conclusion" == "success" && "$created" < "$CUTOFF_SUCCESS" ]]; then
+              echo "Deleting SUCCESSFUL run $id from $created"
+              gh api repos/$REPO/actions/runs/$id -X DELETE
+            fi
+          done
+
+      - name: Delete artifacts older than 7 days
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CUTOFF_ARTIFACTS: ${{ steps.cutoff.outputs.cutoff_artifacts }}
+        run: |
+          artifacts=$(gh api repos/$REPO/actions/artifacts --paginate -q '.artifacts[] | {id: .id, created: .created_at}')
+
+          echo "$artifacts" | while read -r artifact; do
+            id=$(echo "$artifact" | jq -r '.id')
+            created=$(echo "$artifact" | jq -r '.created')
+
+            if [[ "$created" < "$CUTOFF_ARTIFACTS" ]]; then
+              echo "Deleting ARTIFACT $id from $created"
+              gh api repos/$REPO/actions/artifacts/$id -X DELETE
+            fi
+          done
+
+      - name: Delete caches older than 7 days
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CUTOFF_CACHES: ${{ steps.cutoff.outputs.cutoff_caches }}
+        run: |
+          caches=$(gh api repos/$REPO/actions/caches --paginate -q '.actions_caches[] | {id: .id, created: .created_at}')
+
+          echo "$caches" | while read -r cache; do
+            id=$(echo "$cache" | jq -r '.id')
+            created=$(echo "$cache" | jq -r '.created')
+
+            if [[ "$created" < "$CUTOFF_CACHES" ]]; then
+              echo "Deleting CACHE $id from $created"
+              gh api repos/$REPO/actions/caches/$id -X DELETE
+            fi
+          done

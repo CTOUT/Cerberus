@@ -17,12 +17,12 @@ jobs:
       - name: Set cutoff dates
         id: cutoff
         run: |
-          echo "cutoff_success=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-          echo "cutoff_failure=$(date -u -d '3 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_success=$(date -u -d '3 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_failure=$(date -u -d '1 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
           echo "cutoff_cancelled=$(date -u -d '1 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
           echo "cutoff_timedout=$(date -u -d '1 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-          echo "cutoff_artifacts=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-          echo "cutoff_caches=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_artifacts=$(date -u -d '1 hours ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "cutoff_caches=$(date -u -d '1 days ago' +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
       - name: Delete workflow runs
         env:
@@ -33,66 +33,72 @@ jobs:
           CUTOFF_CANCELLED: ${{ steps.cutoff.outputs.cutoff_cancelled }}
           CUTOFF_TIMEDOUT: ${{ steps.cutoff.outputs.cutoff_timedout }}
         run: |
-          runs=$(gh api repos/$REPO/actions/runs --paginate -q '.workflow_runs[] | {id: .id, created: .created_at, conclusion: .conclusion}')
+          gh api repos/$REPO/actions/runs --paginate --jq '.workflow_runs[] | {id: .id, created: .created_at, conclusion: .conclusion} | @json' \
+          | while read -r run; do
+            clean_run=$(echo "$run" | sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g')
+            id=$(echo "$clean_run" | jq -r '.id // empty')
+            created=$(echo "$clean_run" | jq -r '.created // empty')
+            conclusion=$(echo "$clean_run" | jq -r '.conclusion // empty')
 
-          echo "$runs" | while read -r run; do
-            id=$(echo "$run" | jq -r '.id')
-            created=$(echo "$run" | jq -r '.created')
-            conclusion=$(echo "$run" | jq -r '.conclusion')
+            if [[ -z "$id" || "$id" == "null" ]]; then continue; fi
 
             if [[ "$conclusion" == "failure" && "$created" < "$CUTOFF_FAILURE" ]]; then
               echo "Deleting FAILED run $id from $created"
-              gh api repos/$REPO/actions/runs/$id -X DELETE
+              gh api repos/$REPO/actions/runs/$id -X DELETE || true
             fi
 
             if [[ "$conclusion" == "cancelled" && "$created" < "$CUTOFF_CANCELLED" ]]; then
               echo "Deleting CANCELLED run $id from $created"
-              gh api repos/$REPO/actions/runs/$id -X DELETE
+              gh api repos/$REPO/actions/runs/$id -X DELETE || true
             fi
 
             if [[ "$conclusion" == "timed_out" && "$created" < "$CUTOFF_TIMEDOUT" ]]; then
               echo "Deleting TIMED_OUT run $id from $created"
-              gh api repos/$REPO/actions/runs/$id -X DELETE
+              gh api repos/$REPO/actions/runs/$id -X DELETE || true
             fi
 
             if [[ "$conclusion" == "success" && "$created" < "$CUTOFF_SUCCESS" ]]; then
               echo "Deleting SUCCESSFUL run $id from $created"
-              gh api repos/$REPO/actions/runs/$id -X DELETE
+              gh api repos/$REPO/actions/runs/$id -X DELETE || true
             fi
           done
 
-      - name: Delete artifacts older than 7 days
+      - name: Delete old artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           CUTOFF_ARTIFACTS: ${{ steps.cutoff.outputs.cutoff_artifacts }}
         run: |
-          artifacts=$(gh api repos/$REPO/actions/artifacts --paginate -q '.artifacts[] | {id: .id, created: .created_at}')
+          gh api repos/$REPO/actions/artifacts --paginate --jq '.artifacts[] | {id: .id, created: .created_at} | @json' \
+          | while read -r artifact; do
+            clean_art=$(echo "$artifact" | sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g')
+            id=$(echo "$clean_art" | jq -r '.id // empty')
+            created=$(echo "$clean_art" | jq -r '.created // empty')
 
-          echo "$artifacts" | while read -r artifact; do
-            id=$(echo "$artifact" | jq -r '.id')
-            created=$(echo "$artifact" | jq -r '.created')
+            if [[ -z "$id" || "$id" == "null" ]]; then continue; fi
 
             if [[ "$created" < "$CUTOFF_ARTIFACTS" ]]; then
               echo "Deleting ARTIFACT $id from $created"
-              gh api repos/$REPO/actions/artifacts/$id -X DELETE
+              gh api repos/$REPO/actions/artifacts/$id -X DELETE || true
             fi
           done
 
-      - name: Delete caches older than 7 days
+      - name: Delete old caches
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           CUTOFF_CACHES: ${{ steps.cutoff.outputs.cutoff_caches }}
         run: |
-          caches=$(gh api repos/$REPO/actions/caches --paginate -q '.actions_caches[] | {id: .id, created: .created_at}')
+          gh api repos/$REPO/actions/caches --paginate --jq '.actions_caches[] | {id: .id, created: .created_at} | @json' \
+          | while read -r cache; do
+            clean_cache=$(echo "$cache" | sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g')
+            id=$(echo "$clean_cache" | jq -r '.id // empty')
+            created=$(echo "$clean_cache" | jq -r '.created // empty')
 
-          echo "$caches" | while read -r cache; do
-            id=$(echo "$cache" | jq -r '.id')
-            created=$(echo "$cache" | jq -r '.created')
+            if [[ -z "$id" || "$id" == "null" ]]; then continue; fi
 
             if [[ "$created" < "$CUTOFF_CACHES" ]]; then
               echo "Deleting CACHE $id from $created"
-              gh api repos/$REPO/actions/caches/$id -X DELETE
+              gh api repos/$REPO/actions/caches/$id -X DELETE || true
             fi
           done

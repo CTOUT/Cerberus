@@ -23,3 +23,19 @@ npm-debug.log*
 *.tmp
 *.bak
 *.swp
+
+# Local AI / Copilot subscriptions, IDEs & handoff state
+.github/.copilot-subscriptions.json
+.github/agents/
+.github/instructions/
+.github/skills/
+.github/hooks/
+.github/plugin/
+.github/workflows/*.md
+.agents/
+.kiro/
+.claude/
+.cursor/
+.cursorrules
+.gemini/
+.handoff_pending
